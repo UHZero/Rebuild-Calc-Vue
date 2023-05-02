@@ -15,6 +15,7 @@
         <Button label="2"  @setFunction="addDigit" />
         <Button label="3"  @setFunction="addDigit" />
         <Button label="+"  @setFunction="setOperation" operation />
+        <Button label="0"  @setFunction="addDigit" double />
         <Button label="."  @setFunction="addDigit" />
         <Button label="="  @setFunction="setOperation" operation/>
     </div>
@@ -36,13 +37,42 @@ export default {
     components: { Button, Display },
     methods: {
         clearMemory() {
-            Object.assign(this.$data, this.$$options.data())
+            Object.assign(this.$data, this.$options.data())
         },
         addDigit(n) {
-            console.log(n)
+            if(n === "." && this.displayValue.includes(".")) {
+                return
+            }
+
+            const clearDisplay = this.displayValue === "0" || this.clearDisplay
+            const currentValue = clearDisplay ? "" : this.displayValue
+            const displayValue = currentValue + n
+
+            this.displayValue = displayValue
+            this.clearDisplay = false
+            this.values[this.current] = displayValue
         },
         setOperation(operation) {
-            console.log(operation)
+            if(this.current === 0) {
+                this.operation = operation
+                this.current = 1
+                this.clearDisplay = true
+            } else {
+                const equals = operation === "="
+                const currentOperation = this.operation
+
+                try {
+                    this.values[0] = eval(`${this.values[0]}${currentOperation}${this.values[1]}`)
+                } catch (e) {
+                    this.$emit('onError', e)
+                }
+
+                this.values[1] = 0
+                this.displayValue = this.values[0]
+                this.operation = equals ? null : operation
+                this.current = equals ? 0 : 1
+                this.clearDisplay = !equals
+            }
         }
     }
 }
